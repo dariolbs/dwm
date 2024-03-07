@@ -792,6 +792,7 @@ configurenotify(XEvent *e)
 			arrange(NULL);
 		}
 	}
+
 }
 
 void
@@ -981,14 +982,16 @@ drawbar(Monitor *m)
         drw_setscheme(drw, scheme[SchemeNorm]);
         x = drw_text(drw, x, 0, w, bh, lrpad / 2, attmeth[attachdir].symbol, 0);
 
-        char ms[4];
-        sprintf(ms, "%iM", selmon->nmaster);
-        w = TEXTW(ms);
-        x = drw_text(drw, x, 0, w, bh, lrpad / 2, ms, 0);
-
-        w = TEXTW(m->ltsymbol);
-        x = drw_text(drw, x, 0, w, bh, lrpad / 2, m->ltsymbol, 0);
-
+        if (shownmaster) {
+            char ms[4];
+            sprintf(ms, "%iM", selmon->nmaster);
+            w = TEXTW(ms);
+            x = drw_text(drw, x, 0, w, bh, lrpad / 2, ms, 0);
+        }
+        if (showattm) {
+            w = TEXTW(m->ltsymbol);
+            x = drw_text(drw, x, 0, w, bh, lrpad / 2, m->ltsymbol, 0);
+        }
 
         if ((w = m->ww - tw - stw - x) > bh) {
             if (m->sel) {
@@ -1032,11 +1035,8 @@ drawbar(Monitor *m)
                 drw_rect(drw, x, 0, w, bh, 1, 1);
             }
         }
-
         resizebarwin(m);
-
 		drw_map(drw, m->barwin, 0, 0, m->ww -stw, bh);
-
     }
 
 }
@@ -1240,19 +1240,15 @@ void pushdir(const Arg *arg){
             }
             case LEFT:
             case RIGHT: {
-                int cpos;
-                Client *p;
-                /* Get current position */
-	            for(cpos = 0, p = selmon->clients; p != selmon->sel; cpos += ISVISIBLE(p) ? 1 : 0, p = p->next);
-                if (cpos == 0 || cpos == selmon->nmaster)
-                    tagmon(-1, 1);
-                else if (cpos == selmon->nmaster - 1 || cpos == nwinmon(selmon) - 1)
-                    tagmon(1, 0);
+                int nextpos = stackpos((dir == RIGHT ? INC(+1) : INC(-1)));
+                /* If window stays master / slave after cycling */
+                if (ismaster(selmon->sel) == (nextpos + 1 <= selmon->nmaster) )
+                    pushstack(nextpos);
                 else
-                    pushstack(INC(dir == LEFT ? -1 : 1));
+                    tagmon(dir == RIGHT ? 1 : -1, dir == RIGHT ? 0:1);
+                break;
             }
         }
-
     }
     placePointer(selmon);
 }
@@ -1281,7 +1277,7 @@ focusdir(const Arg *arg)
                 case LEFT:
                     focusmon(-1, 1);
                     break;
-                default: focusstack(INC(-(arg->i - 2))); break;
+                default: focusstack(INC(-(dir - 2))); break;
             }
         /* In case a slave window is selected */
         } else {
@@ -1293,9 +1289,9 @@ focusdir(const Arg *arg)
                     if (selmon->nmaster >= 1)
                         focus(nexttiled(selmon->clients));
                     else
-                        focusmon(arg->i == DIR_RIGHT ? 1 : -1, arg->i == DIR_RIGHT ? 0 : 1);
+                        focusmon(dir - 1, dir == RIGHT ? 0 : 1);
                     break;
-                default: focusstack(INC(-(arg->i - 2))); break;
+                default: focusstack(INC(-(dir - 2))); break;
             }
         }
     } else if (ISBSTACK(selmon)) {
@@ -1312,13 +1308,11 @@ focusdir(const Arg *arg)
             case LEFT:
             case RIGHT: {
                 int nextpos = stackpos((dir == RIGHT ? INC(+1) : INC(-1)));
-                printf("is master: %d\n", ismaster(selmon->sel));
-                printf("next position: %d\n", nextpos);
                 /* If window stays master / slave after cycling */
                 if (ismaster(selmon->sel) == (nextpos + 1 <= selmon->nmaster) )
                     focusstack(nextpos);
                 else
-                    focusmon(dir == RIGHT ? 1 : -1, arg->i == DIR_RIGHT ? 0 : 1);
+                    focusmon(dir - 1, dir == RIGHT ? 0 : 1);
                 break;
             }
         }

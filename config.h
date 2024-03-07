@@ -25,8 +25,6 @@ static char selfgcolor[]            = "#eeeeee";
 static char selbordercolor[]        = "#005577";
 static char selbgcolor[]            = "#005577";
 
-static int statussep = ';';     /* Statusline separator */
-
 static char *colors[][3] = {
        /*               fg           bg           border   */
        [SchemeNorm] = { normfgcolor, normbgcolor, normbordercolor },
@@ -39,6 +37,11 @@ static const int showsystray        = 1;                /* 0 means no systray */
 static const unsigned int systraypinning = 0;           /* 0: sloppy systray follows selected monitor, >0: pin systray to monitor X */
 static const unsigned int systrayonleft = 0;            /* 0: systray in the right corner, >0: systray on left of status text */
 static const unsigned int systrayspacing = 2;           /* systray spacing */
+
+/* Statusbar */
+static int statussep = ';';         /* Statusline separator */
+static const int shownmaster = 1;   /* Show how many windows are on the master stack */
+static const int showattm = 1;      /* Show attachment method currently in use */
 
 /* Behaviour */
 static const int pointerfocus = 0;   /* 1 means the mouse pointer will be placed on the center of the window when changing focus */
@@ -123,56 +126,55 @@ ResourcePref resources[] = {
 };
 
 static const Key keys[] = {
-	/* modifier                     key        function        argument */
-	{ MODKEY,                       XK_p,      spawn,          {.v = dmenucmd } },
-	{ MODKEY,                       XK_Return, spawn,          {.v = termcmd } },
-	{ MODKEY,                       XK_b,      togglebar,      {0} },
-	{ MODKEY,                       XK_r,      togglerbar,     {0} },
-	// { MODKEY,                       XK_v,      printdebug,     {0} },
-	{ MODKEY,                       XK_s,      cycledirection, {0} },
-	{ MODKEY,                       XK_a,      focusmaster,    {0} },
-	{ MODKEY,                       XK_i,      incnmaster,     {.i = +1 } },
-	{ MODKEY,                       XK_d,      incnmaster,     {.i = -1 } },
-	{ MODKEY,                       XK_comma,  setmfact,           {.f = -0.05} },
-	{ MODKEY,                       XK_period, setmfact,           {.f = +0.05} },
-    /* Window managament using based vim bindings */
-	{ MODKEY,                       XK_j,      focusdir,          {.i = DOWN} },
-	{ MODKEY,                       XK_k,      focusdir,          {.i = UP} },
-	{ MODKEY,                       XK_h,      focusdir,          {.i = LEFT} },
-	{ MODKEY,                       XK_l,      focusdir,          {.i = RIGHT} },
-	{ MODKEY|ShiftMask,             XK_j,      pushdir,           {.i = DOWN} },
-	{ MODKEY|ShiftMask,             XK_k,      pushdir,           {.i = UP} },
-	{ MODKEY|ShiftMask,             XK_h,      pushdir,           {.i = LEFT} },
-	{ MODKEY|ShiftMask,             XK_l,      pushdir,           {.i = RIGHT} },
-    /* Window managament using arrows*/
-	{ MODKEY,                       XK_Down,   focusdir,          {.i = DOWN} },
-	{ MODKEY,                       XK_Up,     focusdir,          {.i = UP} },
-	{ MODKEY,                       XK_Right,  focusdir,          {.i = RIGHT} },
-	{ MODKEY,                       XK_Left,   focusdir,          {.i = LEFT} },
-	{ MODKEY|ShiftMask,             XK_Down,   pushdir,           {.i = DOWN} },
-	{ MODKEY|ShiftMask,             XK_Up,     pushdir,           {.i = UP} },
-	{ MODKEY|ShiftMask,             XK_Right,  pushdir,           {.i = RIGHT} },
-	{ MODKEY|ShiftMask,             XK_Left,   pushdir,           {.i = LEFT} },
-
-	{ MODKEY,                       XK_q,      killclient,     {0} },
-	{ MODKEY,                       XK_t,      setlayout,      {.v = &layouts[0]} },
-	{ MODKEY|ShiftMask,             XK_space,  setlayout,      {.v = &layouts[1]} },
-	{ MODKEY,                       XK_m,      setlayout,      {.v = &layouts[2]} },
-	{ MODKEY|ShiftMask,             XK_t,      setlayout,      {.v = &layouts[3]} },
-	{ MODKEY,                       XK_space,  togglefloating, {0} },
-	{ MODKEY,                       XK_f,      togglefullscr,  {0} },
-	{ MODKEY|ShiftMask,             XK_f,      togglefakefullscr,  {0} },
-	TAGKEYS(                        XK_1,                      0)
-	TAGKEYS(                        XK_2,                      1)
-	TAGKEYS(                        XK_3,                      2)
-	TAGKEYS(                        XK_4,                      3)
-	TAGKEYS(                        XK_5,                      4)
-	TAGKEYS(                        XK_6,                      5)
-	TAGKEYS(                        XK_7,                      6)
-	TAGKEYS(                        XK_8,                      7)
-	TAGKEYS(                        XK_9,                      8)
-	TAGKEYS(                        XK_0,                      9)
-	{ MODKEY|ShiftMask,             XK_e,      quit,           {0} },
+	/* modifier                     key        function             argument */
+	{ MODKEY,                       XK_p,      spawn,               {.v = dmenucmd } },
+	{ MODKEY,                       XK_Return, spawn,               {.v = termcmd } },
+	{ MODKEY,                       XK_b,      togglebar,           {0} },
+	{ MODKEY,                       XK_r,      togglerbar,          {0} },
+	// { MODKEY,                       XK_v,      printdebug,          {0} },
+	{ MODKEY,                       XK_s,      cycledirection,      {0} },
+	{ MODKEY,                       XK_a,      focusmaster,         {0} },
+	{ MODKEY,                       XK_i,      incnmaster,          {.i = +1 } },
+	{ MODKEY,                       XK_d,      incnmaster,          {.i = -1 } },
+	{ MODKEY,                       XK_comma,  setmfact,            {.f = -0.05} },
+	{ MODKEY,                       XK_period, setmfact,            {.f = +0.05} },
+    /* Manage windows using based vim bindings */
+	{ MODKEY,                       XK_j,      focusdir,            {.i = DOWN} },
+	{ MODKEY,                       XK_k,      focusdir,            {.i = UP} },
+	{ MODKEY,                       XK_h,      focusdir,            {.i = LEFT} },
+	{ MODKEY,                       XK_l,      focusdir,            {.i = RIGHT} },
+	{ MODKEY|ShiftMask,             XK_j,      pushdir,             {.i = DOWN} },
+	{ MODKEY|ShiftMask,             XK_k,      pushdir,             {.i = UP} },
+	{ MODKEY|ShiftMask,             XK_h,      pushdir,             {.i = LEFT} },
+	{ MODKEY|ShiftMask,             XK_l,      pushdir,             {.i = RIGHT} },
+    /* Manage windows using arrows*/
+	{ MODKEY,                       XK_Down,   focusdir,            {.i = DOWN} },
+	{ MODKEY,                       XK_Up,     focusdir,            {.i = UP} },
+	{ MODKEY,                       XK_Right,  focusdir,            {.i = RIGHT} },
+	{ MODKEY,                       XK_Left,   focusdir,            {.i = LEFT} },
+	{ MODKEY|ShiftMask,             XK_Down,   pushdir,             {.i = DOWN} },
+	{ MODKEY|ShiftMask,             XK_Up,     pushdir,             {.i = UP} },
+	{ MODKEY|ShiftMask,             XK_Right,  pushdir,             {.i = RIGHT} },
+	{ MODKEY|ShiftMask,             XK_Left,   pushdir,             {.i = LEFT} },
+	{ MODKEY,                       XK_q,      killclient,          {0} },
+	{ MODKEY,                       XK_t,      setlayout,           {.v = &layouts[0]} },
+	{ MODKEY|ShiftMask,             XK_space,  setlayout,           {.v = &layouts[1]} },
+	{ MODKEY,                       XK_m,      setlayout,           {.v = &layouts[2]} },
+	{ MODKEY|ShiftMask,             XK_t,      setlayout,           {.v = &layouts[3]} },
+	{ MODKEY,                       XK_space,  togglefloating,      {0} },
+	{ MODKEY,                       XK_f,      togglefullscr,       {0} },
+	{ MODKEY|ShiftMask,             XK_f,      togglefakefullscr,   {0} },
+	TAGKEYS(                        XK_1,                           0)
+	TAGKEYS(                        XK_2,                           1)
+	TAGKEYS(                        XK_3,                           2)
+	TAGKEYS(                        XK_4,                           3)
+	TAGKEYS(                        XK_5,                           4)
+	TAGKEYS(                        XK_6,                           5)
+	TAGKEYS(                        XK_7,                           6)
+	TAGKEYS(                        XK_8,                           7)
+	TAGKEYS(                        XK_9,                           8)
+	TAGKEYS(                        XK_0,                           9)
+	{ MODKEY|ShiftMask,             XK_e,      quit,                {0} },
     /* Unused
 	{ MODKEY,                       XK_Return, zoom,           {0} },
 	{ MODKEY,                       XK_Tab,    view,           {0} },

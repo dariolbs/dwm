@@ -17,6 +17,7 @@ To run dwm you have to add `exec dwm` to .xinitrc and then run `startx`.
 ## Features
 This fork has some cool features like:
 + Focusing/pushing windows relative to their position (focusdir and pushdir)
++ Systray
 + Replacement bar to put whatever you want
 + Change colors through xresources
 + Change the default attacment method on the fly

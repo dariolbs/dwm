@@ -337,8 +337,8 @@ static void bstack(Monitor *m);
 /* Extra window management */
 static void focusmaster(const Arg *arg);
 static int stackpos(int pos);
-static void focusdirection(const Arg *arg);
-static void pushdirection(const Arg *arg);
+static void focusdir(const Arg *arg);
+static void pushdir(const Arg *arg);
 static void pushfloat(const Arg *arg);
 static int ismaster(Client *c);
 static int nwinmon(Monitor *m);
@@ -353,8 +353,6 @@ static char estextr[256];
 /* Attach functions */
 static void attachdefault(Client *c);
 static void attachbottom(Client *c);
-
-static void printdebug();
 
 // Old functions
 /* variables */
@@ -1180,7 +1178,7 @@ void pushfloat(const Arg *arg){
 }
 
 /* Pushes the selected window given a direction on the default layout (tile) */
-void pushdirection(const Arg *arg){
+void pushdir(const Arg *arg){
 
     Direction dir = arg->i;
 
@@ -1240,19 +1238,18 @@ void pushdirection(const Arg *arg){
                 }
                 break;
             }
-            case LEFT: {
-                int curpos = stackpos(INC(0));
-                if (curpos == 0 || curpos == selmon->nmaster)
-                    tagmon(-1, 1);
-                else
-                    pushstack(INC(-(dir - 2)));
-            }
+            case LEFT:
             case RIGHT: {
-                int curpos = stackpos(INC(0));
-                if (curpos == selmon->nmaster - 1 || curpos == nwinmon(selmon) - 1)
+                int cpos;
+                Client *p;
+                /* Get current position */
+	            for(cpos = 0, p = selmon->clients; p != selmon->sel; cpos += ISVISIBLE(p) ? 1 : 0, p = p->next);
+                if (cpos == 0 || cpos == selmon->nmaster)
+                    tagmon(-1, 1);
+                else if (cpos == selmon->nmaster - 1 || cpos == nwinmon(selmon) - 1)
                     tagmon(1, 0);
                 else
-                    pushstack(INC(-(dir - 2)));
+                    pushstack(INC(dir == LEFT ? -1 : 1));
             }
         }
 
@@ -1262,7 +1259,7 @@ void pushdirection(const Arg *arg){
 
 /* Change window focus by direction on the tile or bstack layouts */
 void
-focusdirection(const Arg *arg)
+focusdir(const Arg *arg)
 {
     Direction dir = arg->i;
     if (dir < LEFT || dir > UP)
@@ -1315,6 +1312,8 @@ focusdirection(const Arg *arg)
             case LEFT:
             case RIGHT: {
                 int nextpos = stackpos((dir == RIGHT ? INC(+1) : INC(-1)));
+                printf("is master: %d\n", ismaster(selmon->sel));
+                printf("next position: %d\n", nextpos);
                 /* If window stays master / slave after cycling */
                 if (ismaster(selmon->sel) == (nextpos + 1 <= selmon->nmaster) )
                     focusstack(nextpos);
@@ -1327,30 +1326,14 @@ focusdirection(const Arg *arg)
     placePointer(selmon);
 }
 
-/* Used for debugging
-void printdebug(){
-
-    printf("Window name: %s\n\n", selmon->sel->name);
-    printf("ismaster: %i\n", ismaster(selmon->sel));
-    printf("hasstack: %i\n", hasstack(selmon));
-    printf("nwinmon: %i\n", nwinmon(selmon));
-    printf("nmaster: %i\n", selmon->nmaster);
-    printf("ismonocle: %i\n", ismonocle(selmon));
-    printf("monlay: %i\n", selmon->sellt);
-    printf("showrbar: %i\n", selmon->showrbar);
-}
-*/
-
 int ismaster(Client *c)
 {
 	if (selmon->nmaster < 1)
 		return 0;
-
     Client *p;
     int i;
-    for (i = 1, p = c->mon->clients; p && !(p == c); p = p->next)
-        i += ISVISIBLE(p);
-    return(i <= c->mon->nmaster);
+	for(i = 0, p = selmon->clients; p != c; i += ISVISIBLE(p) ? 1 : 0, p = p->next);
+    return(i < c->mon->nmaster);
 }
 
 void
@@ -1367,18 +1350,18 @@ focusmaster(const Arg *arg)
 		focus(c);
 }
 
- void
- focusstack(int pos)
- {
-	int i = stackpos(pos);
-	Client *c, *p;
-	if(i < 0)
- 		return;
-	for(p = NULL, c = selmon->clients; c && (i || !ISVISIBLE(c));
-	    i -= ISVISIBLE(c) ? 1 : 0, p = c, c = c->next);
-	focus(c ? c : p);
-	restack(selmon);
- }
+    void
+focusstack(int pos)
+{
+    int i = stackpos(pos);
+    Client *c, *p;
+    if(i < 0)
+        return;
+    for(p = NULL, c = selmon->clients; c && (i || !ISVISIBLE(c));
+            i -= ISVISIBLE(c) ? 1 : 0, p = c, c = c->next);
+    focus(c ? c : p);
+    restack(selmon);
+}
 
 Atom
 getatomprop(Client *c, Atom prop)
@@ -1820,15 +1803,12 @@ pushstack(int pos) {
 
 	int i = stackpos(pos);
 	Client *sel = selmon->sel, *c, *p;
-
 	if(i < 0)
 		return;
-
 	else if(i == 0) {
 		detach(sel);
 		attach(sel);
 	}
-
 	else {
 		for(p = NULL, c = selmon->clients; c; p = c, c = c->next)
 			if(!(i -= (ISVISIBLE(c) && c != sel)))

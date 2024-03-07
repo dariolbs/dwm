@@ -5,8 +5,6 @@
  * / /_/ /| |/ |/ / / / / / /
  * \__,_/ |__/|__/_/ /_/ /_/ 
  *
- * Fork by Dário Batista
- * Brom brom
  */
 
 /* appearance */
@@ -138,23 +136,23 @@ static const Key keys[] = {
 	{ MODKEY,                       XK_comma,  setmfact,           {.f = -0.05} },
 	{ MODKEY,                       XK_period, setmfact,           {.f = +0.05} },
     /* Window managament using based vim bindings */
-	{ MODKEY,                       XK_j,      focusdirection,          {.i = DOWN} },
-	{ MODKEY,                       XK_k,      focusdirection,          {.i = UP} },
-	{ MODKEY,                       XK_h,      focusdirection,          {.i = LEFT} },
-	{ MODKEY,                       XK_l,      focusdirection,          {.i = RIGHT} },
-	{ MODKEY|ShiftMask,             XK_j,      pushdirection,           {.i = DOWN} },
-	{ MODKEY|ShiftMask,             XK_k,      pushdirection,           {.i = UP} },
-	{ MODKEY|ShiftMask,             XK_h,      pushdirection,           {.i = LEFT} },
-	{ MODKEY|ShiftMask,             XK_l,      pushdirection,           {.i = RIGHT} },
+	{ MODKEY,                       XK_j,      focusdir,          {.i = DOWN} },
+	{ MODKEY,                       XK_k,      focusdir,          {.i = UP} },
+	{ MODKEY,                       XK_h,      focusdir,          {.i = LEFT} },
+	{ MODKEY,                       XK_l,      focusdir,          {.i = RIGHT} },
+	{ MODKEY|ShiftMask,             XK_j,      pushdir,           {.i = DOWN} },
+	{ MODKEY|ShiftMask,             XK_k,      pushdir,           {.i = UP} },
+	{ MODKEY|ShiftMask,             XK_h,      pushdir,           {.i = LEFT} },
+	{ MODKEY|ShiftMask,             XK_l,      pushdir,           {.i = RIGHT} },
     /* Window managament using arrows*/
-	{ MODKEY,                       XK_Down,   focusdirection,          {.i = DOWN} },
-	{ MODKEY,                       XK_Up,     focusdirection,          {.i = UP} },
-	{ MODKEY,                       XK_Right,  focusdirection,          {.i = RIGHT} },
-	{ MODKEY,                       XK_Left,   focusdirection,          {.i = LEFT} },
-	{ MODKEY|ShiftMask,             XK_Down,   pushdirection,           {.i = DOWN} },
-	{ MODKEY|ShiftMask,             XK_Up,     pushdirection,           {.i = UP} },
-	{ MODKEY|ShiftMask,             XK_Right,  pushdirection,           {.i = RIGHT} },
-	{ MODKEY|ShiftMask,             XK_Left,   pushdirection,           {.i = LEFT} },
+	{ MODKEY,                       XK_Down,   focusdir,          {.i = DOWN} },
+	{ MODKEY,                       XK_Up,     focusdir,          {.i = UP} },
+	{ MODKEY,                       XK_Right,  focusdir,          {.i = RIGHT} },
+	{ MODKEY,                       XK_Left,   focusdir,          {.i = LEFT} },
+	{ MODKEY|ShiftMask,             XK_Down,   pushdir,           {.i = DOWN} },
+	{ MODKEY|ShiftMask,             XK_Up,     pushdir,           {.i = UP} },
+	{ MODKEY|ShiftMask,             XK_Right,  pushdir,           {.i = RIGHT} },
+	{ MODKEY|ShiftMask,             XK_Left,   pushdir,           {.i = LEFT} },
 
 	{ MODKEY,                       XK_q,      killclient,     {0} },
 	{ MODKEY,                       XK_t,      setlayout,      {.v = &layouts[0]} },

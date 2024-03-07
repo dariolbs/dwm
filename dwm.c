@@ -19,14 +19,6 @@
  * Keys and tagging rules are organized as arrays and defined in config.h.
  *
  * To understand everything else, start reading main().
- *
- * This fork of dwm is meant to have a different approach on window management.
- * It enables the user to focus/push windows relative to their position, simillar to i3
- *
- * Other features this fork has:
- *
- * Replacement bar, you can put whatever you want there
- * Ability to change between arrangement functions
  */
 #include <errno.h>
 #include <locale.h>
@@ -342,7 +334,7 @@ static void pushdir(const Arg *arg);
 static void pushfloat(const Arg *arg);
 static int ismaster(Client *c);
 static int nwinmon(Monitor *m);
-static int hasstack(Monitor *m);
+static int hasslave(Monitor *m);
 static void cycledirection();
 static void placePointer(Monitor *m);
 
@@ -1148,8 +1140,8 @@ nwinmon(Monitor *m)
     return (i);
 }
 
-/* Check if a monitor has any windows on its stack */
-int hasstack(Monitor *m){ return (nwinmon(m) > m->nmaster); }
+/* Check if a monitor has any slave windows */
+int hasslave(Monitor *m){ return (nwinmon(m) > m->nmaster); }
 
 /* Switches the current selected window with the master window or stack */
 void 
@@ -1240,12 +1232,12 @@ void pushdir(const Arg *arg){
             }
             case LEFT:
             case RIGHT: {
-                int nextpos = stackpos((dir == RIGHT ? INC(+1) : INC(-1)));
+                int nextpos = stackpos((INC(dir - 1)));
                 /* If window stays master / slave after cycling */
-                if (ismaster(selmon->sel) == (nextpos + 1 <= selmon->nmaster) )
+                if (ismaster(selmon->sel) == (nextpos + 1 <= selmon->nmaster && hasslave(selmon)))
                     pushstack(nextpos);
                 else
-                    tagmon(dir == RIGHT ? 1 : -1, dir == RIGHT ? 0:1);
+                    tagmon(dir - 1, dir == RIGHT ? 0 : 1);
                 break;
             }
         }
@@ -1262,15 +1254,15 @@ focusdir(const Arg *arg)
         return;
     /* In case there is only one visible window on the workspace (or none) */
     if (nwinmon(selmon) <= 1 || ISMONOCLE(selmon)){
-        if (arg->i == UP || arg->i == DOWN)
+        if (dir == UP || dir == DOWN)
             return;
-        focusmon(arg->i == RIGHT ? 1 : -1, arg->i == DIR_RIGHT ? 0 : 1);
+        focusmon(dir - 1, dir == RIGHT ? 0 : 1);
     } else if (ISTILE(selmon)) {
         /* In case a window on the master stack is selected */
         if (ismaster(selmon->sel)){
             switch (dir) {
                 case RIGHT:
-                    if (hasstack(selmon))
+                    if (hasslave(selmon))
                         focus(getslave(selmon));
                     restack(selmon);
                     break;
@@ -1302,14 +1294,14 @@ focusdir(const Arg *arg)
                     focus(nexttiled(selmon->clients));
                 break;
             case DOWN:
-                if (ismaster(selmon->sel) && hasstack(selmon))
+                if (ismaster(selmon->sel) && hasslave(selmon))
                     focus(getslave(selmon));
                 break;
             case LEFT:
             case RIGHT: {
                 int nextpos = stackpos((dir == RIGHT ? INC(+1) : INC(-1)));
                 /* If window stays master / slave after cycling */
-                if (ismaster(selmon->sel) == (nextpos + 1 <= selmon->nmaster) )
+                if (ismaster(selmon->sel) == (nextpos + 1 <= selmon->nmaster && hasslave(selmon)) )
                     focusstack(nextpos);
                 else
                     focusmon(dir - 1, dir == RIGHT ? 0 : 1);
@@ -2367,7 +2359,7 @@ focusmon(int dir, int focusstack){
         return;
     unfocus(selmon->sel, 0);
     selmon = m;
-    focus(focusstack && hasstack(m) ? getslave(m) : nexttiled(m->clients));
+    focus(focusstack && hasslave(m) ? getslave(m) : nexttiled(m->clients));
     placePointer(m);
 }
 

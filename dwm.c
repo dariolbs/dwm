@@ -70,6 +70,8 @@
 #define ISTILE(M)               ((M)->lt[selmon->sellt] == (Layout *)&layouts[0])
 #define ISFLOATING(M)           ((M)->lt[selmon->sellt] == (Layout *)&layouts[1])
 
+#define ISMASTER(C)             (clientpos((C)) < (C)->mon->nmaster)
+
 #define SYSTEM_TRAY_REQUEST_DOCK    0
 
 /* XEMBED messages */
@@ -328,21 +330,23 @@ static void bstack(Monitor *m);
 
 /* Extra window management */
 static void focusmaster(const Arg *arg);
-static int stackpos(int pos);
 static void focusdir(const Arg *arg);
 static void pushdir(const Arg *arg);
 static void pushfloat(const Arg *arg);
-static int ismaster(Client *c);
-static int nwinmon(Monitor *m);
-static int hasslave(Monitor *m);
 static void cycledirection();
 static void placePointer(Monitor *m);
+
+/* New cool functions to use */
+static int clientpos(Client *c);
+static int nwinmon(Monitor *m);
+static int hasslave(Monitor *m);
+static int stackpos(int pos);
 
 /* Text for the replacement bar */
 static char estextl[256];
 static char estextr[256];
 
-/* Attach functions */
+/* Attachment functions */
 static void attachdefault(Client *c);
 static void attachbottom(Client *c);
 
@@ -970,9 +974,12 @@ drawbar(Monitor *m)
             x += w;
         }
 
-        w = TEXTW(attmeth[attachdir].symbol);
         drw_setscheme(drw, scheme[SchemeNorm]);
-        x = drw_text(drw, x, 0, w, bh, lrpad / 2, attmeth[attachdir].symbol, 0);
+
+        if (showattm) {
+            w = TEXTW(attmeth[attachdir].symbol);
+            x = drw_text(drw, x, 0, w, bh, lrpad / 2, attmeth[attachdir].symbol, 0);
+        }
 
         if (shownmaster) {
             char ms[4];
@@ -980,10 +987,9 @@ drawbar(Monitor *m)
             w = TEXTW(ms);
             x = drw_text(drw, x, 0, w, bh, lrpad / 2, ms, 0);
         }
-        if (showattm) {
-            w = TEXTW(m->ltsymbol);
-            x = drw_text(drw, x, 0, w, bh, lrpad / 2, m->ltsymbol, 0);
-        }
+
+        w = TEXTW(m->ltsymbol);
+        x = drw_text(drw, x, 0, w, bh, lrpad / 2, m->ltsymbol, 0);
 
         if ((w = m->ww - tw - stw - x) > bh) {
             if (m->sel) {
@@ -1189,7 +1195,7 @@ void pushdir(const Arg *arg){
         tagmon(dir == LEFT ? -1 : 1, dir == LEFT ? 1 : 0);
 
     } else if (ISTILE(selmon)){
-        if (ismaster(selmon->sel)) {
+        if (ISMASTER(selmon->sel)) {
             /* In case we are selecting the master window */
             switch (dir) {
                 case LEFT:
@@ -1216,11 +1222,11 @@ void pushdir(const Arg *arg){
     } else if (ISBSTACK(selmon)) {
         switch (dir){
             case UP:
-                if (!ismaster(selmon->sel))
+                if (!ISMASTER(selmon->sel))
                     switchmaster();
                 break;
             case DOWN: {
-                if (ismaster(selmon->sel)){
+                if (ISMASTER(selmon->sel)){
                     Client *sel = selmon->sel;
                     Client *c = getslave(selmon);
                     detach(sel);
@@ -1234,7 +1240,7 @@ void pushdir(const Arg *arg){
             case RIGHT: {
                 int nextpos = stackpos((INC(dir - 1)));
                 /* If window stays master / slave after cycling */
-                if (ismaster(selmon->sel) == (nextpos + 1 <= selmon->nmaster && hasslave(selmon)))
+                if (ISMASTER(selmon->sel) == (nextpos + 1 <= selmon->nmaster && hasslave(selmon)))
                     pushstack(nextpos);
                 else
                     tagmon(dir - 1, dir == RIGHT ? 0 : 1);
@@ -1259,7 +1265,7 @@ focusdir(const Arg *arg)
         focusmon(dir - 1, dir == RIGHT ? 0 : 1);
     } else if (ISTILE(selmon)) {
         /* In case a window on the master stack is selected */
-        if (ismaster(selmon->sel)){
+        if (ISMASTER(selmon->sel)){
             switch (dir) {
                 case RIGHT:
                     if (hasslave(selmon))
@@ -1287,21 +1293,20 @@ focusdir(const Arg *arg)
             }
         }
     } else if (ISBSTACK(selmon)) {
-        // TODO
         switch (dir) {
             case UP:
-                if (!ismaster(selmon->sel))
+                if (!ISMASTER(selmon->sel))
                     focus(nexttiled(selmon->clients));
                 break;
             case DOWN:
-                if (ismaster(selmon->sel) && hasslave(selmon))
+                if (ISMASTER(selmon->sel) && hasslave(selmon))
                     focus(getslave(selmon));
                 break;
             case LEFT:
             case RIGHT: {
                 int nextpos = stackpos((dir == RIGHT ? INC(+1) : INC(-1)));
                 /* If window stays master / slave after cycling */
-                if (ismaster(selmon->sel) == (nextpos + 1 <= selmon->nmaster && hasslave(selmon)) )
+                if (ISMASTER(selmon->sel) == (nextpos + 1 <= selmon->nmaster && hasslave(selmon)) )
                     focusstack(nextpos);
                 else
                     focusmon(dir - 1, dir == RIGHT ? 0 : 1);
@@ -1312,14 +1317,12 @@ focusdir(const Arg *arg)
     placePointer(selmon);
 }
 
-int ismaster(Client *c)
-{
-	if (selmon->nmaster < 1)
-		return 0;
-    Client *p;
-    int i;
-	for(i = 0, p = selmon->clients; p != c; i += ISVISIBLE(p) ? 1 : 0, p = p->next);
-    return(i < c->mon->nmaster);
+/* Returns the current position of a client in the stack */
+int
+clientpos(Client *c) {
+    Client *p; int i;
+	for(i = 0, p = c->mon->clients; p != c; i += ISVISIBLE(p) ? 1 : 0, p = p->next);
+    return i;
 }
 
 void
@@ -1690,7 +1693,7 @@ movemouse(const Arg *arg)
 			handler[ev.type](&ev);
 			break;
 		case MotionNotify:
-			if ((ev.xmotion.time - lasttime) <= (1000 / 165))
+			if ((ev.xmotion.time - lasttime) <= (1000 / refresh_rate))
 				continue;
 			lasttime = ev.xmotion.time;
 
@@ -1913,7 +1916,7 @@ resizemouse(const Arg *arg)
 			handler[ev.type](&ev);
 			break;
 		case MotionNotify:
-			if ((ev.xmotion.time - lasttime) <= (1000 / 165))
+			if ((ev.xmotion.time - lasttime) <= (1000 / refresh_rate))
 				continue;
 			lasttime = ev.xmotion.time;
 

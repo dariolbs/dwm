@@ -1166,11 +1166,22 @@ switchmaster(){
 void pushfloat(const Arg *arg){
 
     Direction dir = arg->i;
+    int newx = selmon->sel->x;
+    int newy = selmon->sel->y;
 
     if (dir == LEFT || dir == RIGHT)
-        selmon->sel->x += (arg->i - 1) * PUSHF;
+        newx = selmon->sel->x + (arg->i - 1) * PUSHF;
     else
-        selmon->sel->y -= (arg->i - 2) * PUSHF;
+        newy = selmon->sel->y - (arg->i - 2) * PUSHF;
+
+    if (newx + selmon->sel->w > selmon->mw)
+        newx = selmon->mw - selmon->sel->w;
+
+    if (newy + selmon->sel->h > selmon->mh)
+        newy = selmon->mh - selmon->sel->h;
+
+    selmon->sel->y = newy;
+    selmon->sel->x = newx;
 
     arrange(selmon);
 }
@@ -2397,7 +2408,13 @@ tile(Monitor *m)
 void
 togglebar(const Arg *arg)
 {
-	selmon->showbar = selmon->pertag->showbars[selmon->pertag->curtag] = !selmon->showbar;
+    if (pertag_bar)
+        selmon->showbar = selmon->pertag->showbars[selmon->pertag->curtag] = !selmon->showbar;
+    else {
+        selmon->showbar = !selmon->showbar;
+        for (int i = 0; i < LENGTH(tags) + 1; i++)
+            selmon->pertag->showbars[i] = selmon->showbar;
+    }
 	updatebarpos(selmon);
 	resizebarwin(selmon);
 

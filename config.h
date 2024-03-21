@@ -19,7 +19,7 @@ static const char dmenu_lines[]     = "15";
 
 /* Behaviour */
 static const int pointerfocus = 0;      /* 1 means the mouse pointer will be placed on the center of the window when changing focus */
-static const int refresh_rate = 60;     /* Refresh rate of the windows, should be equal to your monitor's */
+static const int refresh_rate = 165;     /* Refresh rate of the windows, should be equal to your monitor's */
 
 /* Fallback colors for the ones that should be defined on Xresources */
 static char normbgcolor[]           = "#222222";
@@ -39,6 +39,7 @@ static char *colors[][3] = {
 static int statussep = ';';         /* Statusline separator */
 static const int shownmaster = 1;   /* Show how many windows are on the master stack */
 static const int showattm = 1;      /* Show attachment method currently in use */
+static const int pertag_bar = 0;    /* 1 means toggle bar per tag */
 
 /* Systray */
 static const int systraypinningfailfirst = 1;           /* 1: if pinning fails, display systray on the first monitor, False: display systray on the last monitor*/

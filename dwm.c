@@ -1272,8 +1272,9 @@ focusdir(const Arg *arg)
     /* In case there is only one visible window on the workspace (or none) */
     if (nwinmon(selmon) <= 1 || ISMONOCLE(selmon)){
         if (dir == UP || dir == DOWN)
-            return;
-        focusmon(dir - 1, dir == RIGHT ? 0 : 1);
+            focusstack(INC(-(dir - 2)));
+        else
+            focusmon(dir - 1, dir == RIGHT ? 0 : 1);
     } else if (ISTILE(selmon)) {
         /* In case a window on the master stack is selected */
         if (ISMASTER(selmon->sel)){

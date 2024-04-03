@@ -12,6 +12,8 @@ static unsigned int borderpx  = 1;        /* border pixel of windows */
 static unsigned int snap      = 32;       /* snap pixel */
 static int showbar            = 1;        /* 0 means no bar */
 static int topbar             = 0;        /* 0 means bottom bar */
+static const int dmenutop           = 0;        /* 0 means dmenu at the bottom */
+static const int dmenucenter           = 0;        /* 0 means dmenu at the bottom */
 static const char *fonts[]          = { "JetBrainsMono:size=13" };
 static const char dmenufont[]       = "JetBrainsMono:size=13";
 static const char dmenu_boder[]     = "2";
@@ -105,7 +107,7 @@ static int attachdir          = 0;        /* Default attachment function */
 
 /* commands */
 static char dmenumon[2] = "0"; /* component of dmenucmd, manipulated in spawn() */
-static const char *dmenucmd[] = { "dmenu_run", "-c", "-bw", dmenu_boder, "-l", dmenu_lines, "-b", "-m", dmenumon, "-fn", dmenufont, NULL };
+static const char *dmenucmd[] = { "dmenu_run", (dmenutop ? "" : "-b"), "-m", dmenumon, "-fn", dmenufont, NULL };
 static const char *termcmd[]  = { "st", NULL };
 
 /*

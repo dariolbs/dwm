@@ -1165,23 +1165,51 @@ switchmaster(){
 
 void pushfloat(const Arg *arg){
 
+    Client *c;
+    Monitor *m;
+    int ocx, ocy, nx, ny;
     Direction dir = arg->i;
-    int newx = selmon->sel->x;
-    int newy = selmon->sel->y;
 
-    if (dir == LEFT || dir == RIGHT)
-        newx = selmon->sel->x + (arg->i - 1) * PUSHF;
-    else
-        newy = selmon->sel->y - (arg->i - 2) * PUSHF;
+    if (!(c = selmon->sel))
+        return;
+    if (c->isfullscreen && !c->isfakefullscreen)
+        return;
 
-    if (newx + selmon->sel->w > selmon->mw)
-        newx = selmon->mw - selmon->sel->w;
+    ocx = c->x;
+    ocy = c->y;
 
-    if (newy + selmon->sel->h > selmon->mh)
-        newy = selmon->mh - selmon->sel->h;
+    // Get new coordinates
+    if (dir == LEFT || dir == RIGHT) {
+        nx = ocx + (arg->i - 1) * PUSHF;
+        ny = ocy;
+    }
+    else {
+        ny = ocy - (arg->i - 2) * PUSHF;
+        nx = ocx;
+    }
 
-    selmon->sel->y = newy;
-    selmon->sel->x = newx;
+    // Snap window
+    if (abs(selmon->wx - nx) < snap)
+        nx = selmon->wx;
+    else if (abs((selmon->wx + selmon->ww) - (nx + WIDTH(c))) < snap)
+        nx = selmon->wx + selmon->ww - WIDTH(c);
+    if (abs(selmon->wy - ny) < snap)
+        ny = selmon->wy;
+    else if (abs((selmon->wy + selmon->wh) - (ny + HEIGHT(c))) < snap)
+        ny = selmon->wy + selmon->wh - HEIGHT(c);
+    if (!c->isfloating && selmon->lt[selmon->sellt]->arrange
+            && (abs(nx - c->x) > snap || abs(ny - c->y) > snap))
+        togglefloating(NULL);
+    if (!selmon->lt[selmon->sellt]->arrange || c->isfloating)
+        resize(c, nx, ny, c->w, c->h, 1);
+
+    // Send client to monitor if it goes out of the
+    // current one
+    if ((m = recttomon(c->x, c->y, c->w, c->h)) != selmon) {
+		sendmon(c, m, 0);
+		selmon = m;
+		focus(NULL);
+	}
 
     arrange(selmon);
 }

@@ -1,9 +1,10 @@
-/* DWM - The dynamic window manager
- *        __                 
- *   ____/ /      ______ ___ 
- *  / __  / | /| / / __ `__ \
- * / /_/ /| |/ |/ / / / / / /
- * \__,_/ |__/|__/_/ /_/ /_/ 
+/* DDWM - Dário's Dynamic Window Manager
+ *
+ *        __    __                 
+ *   ____/ /___/ /      ______ ___ 
+ *  / __  / __  / | /| / / __ `__ \
+ * / /_/ / /_/ /| |/ |/ / / / / / /
+ * \__,_/\__,_/ |__/|__/_/ /_/ /_/ 
  *
  */
 
@@ -12,16 +13,17 @@ static unsigned int borderpx  = 1;        /* border pixel of windows */
 static unsigned int snap      = 32;       /* snap pixel */
 static int showbar            = 1;        /* 0 means no bar */
 static int topbar             = 0;        /* 0 means bottom bar */
+static const int vacanttags     = 1;       /* 1 means draw only tags that have clients on then */
 static const int dmenutop           = 0;        /* 0 means dmenu at the bottom */
-static const int dmenucenter           = 0;        /* 0 means dmenu at the bottom */
-static const char *fonts[]          = { "JetBrainsMono:size=13" };
-static const char dmenufont[]       = "JetBrainsMono:size=13";
+static const int dmenucenter        = 0;        /* 0 means dmenu at the bottom */
+static const char *fonts[]          = { "JetBrainsMonoNerdFont:size=13", "NotoColorEmoji:size=13" };
+static const char dmenufont[]       = "JetBrainsMonoNerdFont:size=13";
 static const char dmenu_boder[]     = "2";
 static const char dmenu_lines[]     = "15";
 
 /* Behaviour */
 static const int pointerfocus = 0;      /* 1 means the mouse pointer will be placed on the center of the window when changing focus */
-static const int refresh_rate = 165;     /* Refresh rate of the windows, should be equal to your monitor's */
+static const int refresh_rate = 165;     /* Window manager's refresh rate of the windows, should be equal to your monitor's */
 
 /* Fallback colors for the ones that should be defined on Xresources */
 static char normbgcolor[]           = "#222222";

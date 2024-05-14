@@ -6,7 +6,7 @@
  * events about window (dis-)appearance. Only one X connection at a time is
  * allowed to select for this event mask.
  *
- * The event handlers of dwm are organized in an array which is accessed
+ * The event handlers of ddwm are organized in an array which is accessed
  * whenever a new event has been fetched. This allows event dispatching
  * in O(1) time.
  *
@@ -88,7 +88,7 @@
 
 #define PUSHF   50
 
-#define VERSION_NAME "dwm-dario"
+#define VERSION_NAME "ddwm"
 
 /* Relative placement functions */
 #define     DIR_LEFT    0  
@@ -587,9 +587,21 @@ buttonpress(XEvent *e)
 	}
 	if (ev->window == selmon->barwin) {
 		i = x = 0;
-		do
-			x += TEXTW(tags[i]);
-		while (ev->x >= x && ++i < LENGTH(tags));
+        if (vacanttags) {
+            unsigned int occ = 0;
+            for(c = m->clients; c; c=c->next)
+                occ |= c->tags == TAGMASK ? 0 : c->tags;
+            do {
+                /* Do not reserve space for vacant tags */
+                if (!(occ & 1 << i || m->tagset[m->seltags] & 1 << i))
+                    continue;
+                x += TEXTW(tags[i]);
+            } while (ev->x >= x && ++i < LENGTH(tags));
+        } else {
+            do
+                x += TEXTW(tags[i]);
+            while (ev->x >= x && ++i < LENGTH(tags));
+        }
 		if (i < LENGTH(tags)) {
 			click = ClkTagBar;
 			arg.ui = 1 << i;
@@ -962,25 +974,42 @@ drawbar(Monitor *m)
                 urg |= c->tags;
         }
 
-        x = 0;
-        for (i = 0; i < LENGTH(tags); i++) {
-            w = TEXTW(tags[i]);
-            drw_setscheme(drw, scheme[m->tagset[m->seltags] & 1 << i ? SchemeSel : SchemeNorm]);
-            drw_text(drw, x, 0, w, bh, lrpad / 2, tags[i], urg & 1 << i);
-            if (occ & 1 << i)
-                drw_rect(drw, x + boxs, boxs, boxw, boxw,
-                    m == selmon && selmon->sel && selmon->sel->tags & 1 << i,
-                    urg & 1 << i);
-            x += w;
+        if (vacanttags) {
+            x = 0;
+            for (i = 0; i < LENGTH(tags); i++) {
+                if (m->tagset[m->seltags] & 1 << i) {
+                    w = TEXTW(tags[i]);
+                    drw_setscheme(drw, scheme[SchemeSel]);
+                    drw_text(drw, x, 0, w, bh, lrpad / 2, tags[i], urg & 1 << i);
+                    x += w;
+                } else if (occ & 1 << i) {
+                    w = TEXTW(tags[i]);
+                    drw_setscheme(drw, scheme[SchemeNorm]);
+                    drw_text(drw, x, 0, w, bh, lrpad / 2, tags[i], urg & 1 << i);
+                    x += w;
+                }
+            }
+        } else {
+            x = 0;
+            for (i = 0; i < LENGTH(tags); i++) {
+                w = TEXTW(tags[i]);
+                drw_setscheme(drw, scheme[m->tagset[m->seltags] & 1 << i ? SchemeSel : SchemeNorm]);
+                drw_text(drw, x, 0, w, bh, lrpad / 2, tags[i], urg & 1 << i);
+                if (occ & 1 << i)
+                    drw_rect(drw, x + boxs, boxs, boxw, boxw,
+                        m == selmon && selmon->sel && selmon->sel->tags & 1 << i,
+                        urg & 1 << i);
+                x += w;
+            }
         }
 
         drw_setscheme(drw, scheme[SchemeNorm]);
 
-        if (showattm) {
-            w = TEXTW(attmeth[attachdir].symbol);
-            x = drw_text(drw, x, 0, w, bh, lrpad / 2, attmeth[attachdir].symbol, 0);
-        }
+        // Layout symbol
+        w = TEXTW(m->ltsymbol);
+        x = drw_text(drw, x, 0, w, bh, lrpad / 2, m->ltsymbol, 0);
 
+        // Number of windows in the master stack
         if (shownmaster) {
             char ms[4];
             sprintf(ms, "%iM", selmon->nmaster);
@@ -988,8 +1017,11 @@ drawbar(Monitor *m)
             x = drw_text(drw, x, 0, w, bh, lrpad / 2, ms, 0);
         }
 
-        w = TEXTW(m->ltsymbol);
-        x = drw_text(drw, x, 0, w, bh, lrpad / 2, m->ltsymbol, 0);
+        // Attatch method
+        if (showattm) {
+            w = TEXTW(attmeth[attachdir].symbol);
+            x = drw_text(drw, x, 0, w, bh, lrpad / 2, attmeth[attachdir].symbol, 0);
+        }
 
         if ((w = m->ww - tw - stw - x) > bh) {
             if (m->sel) {
@@ -2253,7 +2285,7 @@ setup(void)
 	XChangeProperty(dpy, wmcheckwin, netatom[NetWMCheck], XA_WINDOW, 32,
 		PropModeReplace, (unsigned char *) &wmcheckwin, 1);
 	XChangeProperty(dpy, wmcheckwin, netatom[NetWMName], utf8string, 8,
-		PropModeReplace, (unsigned char *) "dwm", 3);
+		PropModeReplace, (unsigned char *) "ddwm", 4);
 	XChangeProperty(dpy, root, netatom[NetWMCheck], XA_WINDOW, 32,
 		PropModeReplace, (unsigned char *) &wmcheckwin, 1);
 	/* EWMH support per view */
@@ -2321,7 +2353,7 @@ spawn(const Arg *arg)
 		sigaction(SIGCHLD, &sa, NULL);
 
 		execvp(((char **)arg->v)[0], (char **)arg->v);
-		die("dwm: execvp '%s' failed:", ((char **)arg->v)[0]);
+		die("ddwm: execvp '%s' failed:", ((char **)arg->v)[0]);
 	}
 }
 
@@ -2388,7 +2420,6 @@ placePointer(Monitor *m)
     if (m->sel)
         XWarpPointer(dpy, None, m->sel->win, 0, 0, 0, 0, m->sel->w / 2, m->sel->h / 2);
     else
-        //XWarpPointer(dpy, None, m->barwin, 0, 0, 0, 0, m->mw / 2, m->mh / 2);
         XWarpPointer(dpy, None, m->barwin, 0, 0, 0, 0, m->mw / 2, m->mh / 2);
 }
 
@@ -2464,31 +2495,13 @@ togglebar(const Arg *arg)
 void
 togglerbar(const Arg *arg)
 {
-    if (selmon->showbar){
-        selmon->showrbar = selmon->pertag->showrbars[selmon->pertag->curtag] = !selmon->showrbar;
-    } else {
+    if (!selmon->showbar)
         return;
-    }
 
-    /*
-	if (showsystray) {
-
-		XWindowChanges wc;
-		if (selmon->showrbar)
-			wc.y = -bh;
-		else if (!selmon->showrbar) {
-			wc.y = 0;
-			if (!selmon->topbar)
-				wc.y = selmon->mh - bh;
-		}
-		XConfigureWindow(dpy, systray->win, CWY, &wc);
-	}
-    */
-
-	updatebarpos(selmon);
-	resizebarwin(selmon);
+    selmon->showrbar = selmon->pertag->showrbars[selmon->pertag->curtag] = !selmon->showrbar;
+    updatebarpos(selmon);
+    resizebarwin(selmon);
     arrange(selmon);
-
 }
 
 void
@@ -2638,7 +2651,7 @@ updatebars(void)
 		.background_pixmap = ParentRelative,
 		.event_mask = ButtonPressMask|ExposureMask
 	};
-	XClassHint ch = {"dwm", "dwm"};
+	XClassHint ch = {"ddwm", "ddwm"};
 	for (m = mons; m; m = m->next) {
 		if (m->barwin)
 			continue;
@@ -2942,7 +2955,7 @@ updatesystray(void)
 			XSync(dpy, False);
 		}
 		else {
-			fprintf(stderr, "dwm: unable to obtain system tray.\n");
+			fprintf(stderr, "ddwm: unable to obtain system tray.\n");
 			free(systray);
 			systray = NULL;
 			return;
@@ -3111,7 +3124,7 @@ xerror(Display *dpy, XErrorEvent *ee)
 	|| (ee->request_code == X_GrabKey && ee->error_code == BadAccess)
 	|| (ee->request_code == X_CopyArea && ee->error_code == BadDrawable))
 		return 0;
-	fprintf(stderr, "dwm: fatal error: request code=%d, error code=%d\n",
+	fprintf(stderr, "ddwm: fatal error: request code=%d, error code=%d\n",
 		ee->request_code, ee->error_code);
 	return xerrorxlib(dpy, ee); /* may call exit */
 }
@@ -3127,7 +3140,7 @@ xerrordummy(Display *dpy, XErrorEvent *ee)
 int
 xerrorstart(Display *dpy, XErrorEvent *ee)
 {
-	die("dwm: another window manager is already running");
+	die("ddwm: another window manager is already running");
 	return -1;
 }
 
@@ -3176,7 +3189,7 @@ resource_load(XrmDatabase db, char *name, enum resource_type rtype, void *dst)
 	char *type;
 	XrmValue ret;
 
-	snprintf(fullname, sizeof(fullname), "%s.%s", "dwm", name);
+	snprintf(fullname, sizeof(fullname), "%s.%s", "ddwm", name);
 	fullname[sizeof(fullname) - 1] = '\0';
 
 	XrmGetResource(db, fullname, "*", &type, &ret);
@@ -3221,11 +3234,11 @@ main(int argc, char *argv[])
 	if (argc == 2 && !strcmp("-v", argv[1]))
 		die(VERSION_NAME);
 	else if (argc != 1)
-		die("usage: dwm [-v]");
+		die("usage: ddwm [-v]");
 	if (!setlocale(LC_CTYPE, "") || !XSupportsLocale())
 		fputs("warning: no locale support\n", stderr);
 	if (!(dpy = XOpenDisplay(NULL)))
-		die("dwm: cannot open display");
+		die("ddwm: cannot open display");
 	checkotherwm();
 	XrmInitialize();
 	load_xresources();

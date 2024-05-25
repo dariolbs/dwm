@@ -16,6 +16,7 @@ static int topbar             = 0;        /* 0 means bottom bar */
 static const int vacanttags     = 1;       /* 1 means draw only tags that have clients on then */
 static const int dmenutop           = 0;        /* 0 means dmenu at the bottom */
 static const int dmenucenter        = 0;        /* 0 means dmenu at the bottom */
+static const unsigned int gappx     = 0;        /* gaps between windows */
 static const char *fonts[]          = { "JetBrainsMonoNerdFont:size=13", "NotoColorEmoji:size=13" };
 static const char dmenufont[]       = "JetBrainsMonoNerdFont:size=13";
 static const char dmenu_boder[]     = "2";

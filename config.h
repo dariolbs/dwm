@@ -81,8 +81,8 @@ static const Layout layouts[] = {
 
 static const Attachm attmeth[] = {
 	/* symbol      attach function */
-    { "AD",       attachdefault },
-    { "AB",       attachbottom },
+    { "<-",       attachdefault },
+    { "->",       attachbottom },
 };
 
 static int attachdir          = 0;        /* Default attachment function */
@@ -91,9 +91,11 @@ static int attachdir          = 0;        /* Default attachment function */
 #define MODKEY Mod4Mask
 #define TAGKEYS(KEY,TAG) \
 	{ MODKEY,                       KEY,      view,           {.ui = 1 << TAG} }, \
+	{ MODKEY|ShiftMask,             KEY,      tag,            {.ui = 1 << TAG} },
+/*
 	{ MODKEY|ControlMask,           KEY,      toggleview,     {.ui = 1 << TAG} }, \
-	{ MODKEY|ShiftMask,             KEY,      tag,            {.ui = 1 << TAG} }, \
 	{ MODKEY|ControlMask|ShiftMask, KEY,      toggletag,      {.ui = 1 << TAG} },
+*/
 /*
 #define STACKKEYS(MOD,ACTION) \
 	{ MOD, XK_j,     ACTION##stack, {INC(+1)}}, \
@@ -134,6 +136,7 @@ ResourcePref resources[] = {
 
 static const Key keys[] = {
 	/* modifier                     key        function             argument */
+	{ MODKEY|ShiftMask,             XK_e,      spawn,               {.v = "poweroff" } },
 	{ MODKEY,                       XK_p,      spawn,               {.v = dmenucmd } },
 	{ MODKEY,                       XK_Return, spawn,               {.v = termcmd } },
 	{ MODKEY,                       XK_b,      togglebar,           {0} },

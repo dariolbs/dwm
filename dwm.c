@@ -82,13 +82,13 @@
 #define XEMBED_MAPPED              (1 << 0)
 #define XEMBED_WINDOW_ACTIVATE      1
 #define XEMBED_WINDOW_DEACTIVATE    2
-#define VERSION_MAJOR               1
-#define VERSION_MINOR               0
+#define VERSION_MAJOR               6
+#define VERSION_MINOR               5
 #define XEMBED_EMBEDDED_VERSION (VERSION_MAJOR << 16) | VERSION_MINOR
 
 #define PUSHF   50
 
-#define VERSION_NAME "ddwm-1.0.0"
+#define VERSION_NAME "dwm-6.5"
 
 /* Relative placement functions */
 #define     DIR_LEFT    0  
@@ -744,6 +744,7 @@ clientmessage(XEvent *e)
 	if (!c)
 		return;
 	if (cme->message_type == netatom[NetWMState]) {
+        return;
 		if (cme->data.l[1] == netatom[NetWMFullscreen]
 		|| cme->data.l[2] == netatom[NetWMFullscreen])
 			setfullscreen(c, (cme->data.l[0] == 1 /* _NET_WM_STATE_ADD    */
@@ -817,14 +818,14 @@ configurerequest(XEvent *e)
 			c->bw = ev->border_width;
 		else if (c->isfloating || !selmon->lt[selmon->sellt]->arrange) {
 			m = c->mon;
-			if (ev->value_mask & CWX) {
-				c->oldx = c->x;
-				c->x = m->mx + ev->x;
-			}
-			if (ev->value_mask & CWY) {
-				c->oldy = c->y;
-				c->y = m->my + ev->y;
-			}
+            if (ev->value_mask & CWX) {
+                c->oldx = c->x;
+                c->x = m->mx + ev->x;
+            }
+            if (ev->value_mask & CWY) {
+                c->oldy = c->y;
+                c->y = m->my + ev->y;
+            }
 			if (ev->value_mask & CWWidth) {
 				c->oldw = c->w;
 				c->w = ev->width;
@@ -1011,18 +1012,18 @@ drawbar(Monitor *m)
         w = TEXTW(m->ltsymbol);
         x = drw_text(drw, x, 0, w, bh, lrpad / 2, m->ltsymbol, 0);
 
+        // Attatch method
+        if (showattm) {
+            w = TEXTW(attmeth[attachdir].symbol);
+            x = drw_text(drw, x, 0, w, bh, lrpad / 2, attmeth[attachdir].symbol, 0);
+        }
+
         // Number of windows in the master stack
         if (shownmaster) {
             char ms[4];
             sprintf(ms, "%iM", selmon->nmaster);
             w = TEXTW(ms);
             x = drw_text(drw, x, 0, w, bh, lrpad / 2, ms, 0);
-        }
-
-        // Attatch method
-        if (showattm) {
-            w = TEXTW(attmeth[attachdir].symbol);
-            x = drw_text(drw, x, 0, w, bh, lrpad / 2, attmeth[attachdir].symbol, 0);
         }
 
         if ((w = m->ww - tw - stw - x) > bh) {
@@ -1387,7 +1388,7 @@ focusdir(const Arg *arg)
                 break;
             }
         }
-    }
+    } else if (ISFLOATING(selmon)) { focusstack(INC(-(dir - 2))); }
     placePointer(selmon);
 }
 
@@ -2287,7 +2288,7 @@ setup(void)
 	XChangeProperty(dpy, wmcheckwin, netatom[NetWMCheck], XA_WINDOW, 32,
 		PropModeReplace, (unsigned char *) &wmcheckwin, 1);
 	XChangeProperty(dpy, wmcheckwin, netatom[NetWMName], utf8string, 8,
-		PropModeReplace, (unsigned char *) "ddwm", 4);
+		PropModeReplace, (unsigned char *) "dwm", 3);
 	XChangeProperty(dpy, root, netatom[NetWMCheck], XA_WINDOW, 32,
 		PropModeReplace, (unsigned char *) &wmcheckwin, 1);
 	/* EWMH support per view */
@@ -2509,15 +2510,20 @@ togglerbar(const Arg *arg)
 void
 togglefloating(const Arg *arg)
 {
-	if (!selmon->sel)
-		return;
+    if (!selmon->sel)
+        return;
     if (selmon->sel->isfullscreen &&  !selmon->sel->isfakefullscreen) /* no support for fullscreen windows */
-		return;
-	selmon->sel->isfloating = !selmon->sel->isfloating || selmon->sel->isfixed;
-	if (selmon->sel->isfloating)
-		resize(selmon->sel, selmon->sel->x, selmon->sel->y,
-			selmon->sel->w, selmon->sel->h, 0);
-	arrange(selmon);
+        return;
+    selmon->sel->isfloating = !selmon->sel->isfloating || selmon->sel->isfixed;
+    if (selmon->sel->isfloating) {
+        resize(selmon->sel, selmon->sel->x, selmon->sel->y,
+                selmon->sel->w, selmon->sel->h, 0);
+    }
+
+    selmon->sel->x = selmon->sel->mon->mx + (selmon->sel->mon->mw - WIDTH(selmon->sel)) / 2;
+    selmon->sel->y = selmon->sel->mon->my + (selmon->sel->mon->mh - HEIGHT(selmon->sel)) / 2;
+
+    arrange(selmon);
 }
 
 void
@@ -2653,7 +2659,7 @@ updatebars(void)
 		.background_pixmap = ParentRelative,
 		.event_mask = ButtonPressMask|ExposureMask
 	};
-	XClassHint ch = {"ddwm", "ddwm"};
+	XClassHint ch = {"dwm", "dwm"};
 	for (m = mons; m; m = m->next) {
 		if (m->barwin)
 			continue;
@@ -2685,7 +2691,7 @@ updatebarpos(Monitor *m)
 }
 
 void
-updateclientlist()
+updateclientlist(void)
 {
 	Client *c;
 	Monitor *m;

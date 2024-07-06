@@ -17,10 +17,12 @@ static const int vacanttags     = 1;       /* 1 means draw only tags that have c
 static const int dmenutop           = 0;        /* 0 means dmenu at the bottom */
 static const int dmenucenter        = 0;        /* 0 means dmenu at the bottom */
 static const unsigned int gappx     = 0;        /* gaps between windows */
-static const char *fonts[]          = { "JetBrainsMonoNerdFont:size=13", "NotoColorEmoji:size=13" };
-static const char dmenufont[]       = "JetBrainsMonoNerdFont:size=13";
+static const char *fonts[]          = { "JetBrainsMonoNerdFont:size=12", "NotoColorEmoji:size=12" };
+static const char dmenufont[]       = "JetBrainsMonoNerdFont:size=12";
 static const char dmenu_boder[]     = "2";
 static const char dmenu_lines[]     = "15";
+
+#define STATUSBAR "dwmblocks"
 
 /* Behaviour */
 static const int pointerfocus = 0;      /* 1 means the mouse pointer will be placed on the center of the window when changing focus */
@@ -41,7 +43,6 @@ static char *colors[][3] = {
 };
 
 /* Statusbar */
-static int statussep = ';';         /* Statusline separator */
 static const int shownmaster = 1;   /* Show how many windows are on the master stack */
 static const int showattm = 1;      /* Show attachment method currently in use */
 static const int pertag_bar = 0;    /* 1 means toggle bar per tag */
@@ -140,7 +141,6 @@ static const Key keys[] = {
 	{ MODKEY,                       XK_p,      spawn,               {.v = dmenucmd } },
 	{ MODKEY,                       XK_Return, spawn,               {.v = termcmd } },
 	{ MODKEY,                       XK_b,      togglebar,           {0} },
-	{ MODKEY,                       XK_r,      togglerbar,          {0} },
 	// { MODKEY,                       XK_v,      printdebug,          {0} },
 	{ MODKEY,                       XK_s,      cycledirection,      {0} },
 	{ MODKEY,                       XK_a,      focusmaster,         {0} },
@@ -209,4 +209,12 @@ static const Button buttons[] = {
 	{ ClkTagBar,            0,              Button3,        toggleview,     {0} },
 	{ ClkTagBar,            MODKEY,         Button1,        tag,            {0} },
 	{ ClkTagBar,            MODKEY,         Button3,        toggletag,      {0} },
+
+    // DWMBLOCKS
+    { ClkStatusText,        0,              Button1,        sigdwmblocks,   {.i = 1} },
+	{ ClkStatusText,        0,              Button2,        sigdwmblocks,   {.i = 2} },
+	{ ClkStatusText,        0,              Button3,        sigdwmblocks,   {.i = 3} },
+	{ ClkStatusText,        0,              Button4,        sigdwmblocks,   {.i = 4} },
+	{ ClkStatusText,        0,              Button5,        sigdwmblocks,   {.i = 5} },
+	{ ClkStatusText,        ShiftMask,      Button1,        sigdwmblocks,   {.i = 6} },
 };
